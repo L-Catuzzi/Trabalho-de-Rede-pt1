@@ -1,3 +1,5 @@
+#include "UuidGenerator.hpp"
+
 std::array<uint8_t, 16> UuidGenerator::generate() {
     std::array<uint8_t, 16> uuid;
     std::random_device rd;

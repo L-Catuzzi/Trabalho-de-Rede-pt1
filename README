@@ -1,21 +1,14 @@
 Primeira parte do trabalho final de redes de computadores
+
+## Integrantes
+Luiz Fellipe Catuzzi - 11871198
+Eduarda
+Rafael Mansur
+
+## Objetivo
 Este projeto implementa o protocolo SLOW (Simple Layered Over UDP Wrapper) usando C++17. A seguir estão as bibliotecas utilizadas no projeto, suas finalidades e onde são aplicadas:
 
 ## ✅ Dependências
-
-### C++ STL (Standard Library - já incluída com o compilador g++)
-
-| Biblioteca     | Para que serve                                      | Onde é usada                          |
-|----------------|------------------------------------------------------|----------------------------------------|
-| `<iostream>`   | Entrada/saída (`std::cout`, `std::cin`)             | Impressão no terminal, debug           |
-| `<vector>`     | Vetores dinâmicos                                   | Campo `data` do pacote                 |
-| `<array>`      | Arrays fixos (ex: UUID)                              | Campo `sid` (UUID 16 bytes)            |
-| `<cstdint>`    | Tipos inteiros com tamanho fixo (`uint32_t` etc)    | Definição de cabeçalhos de pacotes     |
-| `<cstring>`    | Manipulação de memória (`memcpy`, `memcmp`)         | Serialização e parsing                 |
-| `<cstdlib>`    | Funções C padrão como `rand()`                      | Geração de IDs (ex: fid)               |
-| `<random>`     | Geração moderna de números aleatórios               | Gerador de UUIDs                       |
-| `<chrono>`     | Utilitários de tempo (usado no UUID)                | Semente para aleatoriedade             |
-
 ### Bibliotecas POSIX (requerem Linux/WSL2/macOS/MSYS2)
 
 | Biblioteca         | Para que serve                                      | Onde é usada                  |
@@ -26,8 +19,12 @@ Este projeto implementa o protocolo SLOW (Simple Layered Over UDP Wrapper) usand
 | `<unistd.h>`       | Funções POSIX como `close()`                        | Fechamento do socket                   |
 
 ## ⚠️ Observações
-- Este projeto **não roda nativamente em Windows com MinGW**, pois MinGW não inclui as bibliotecas POSIX. Use **WSL2**, **MSYS2**, ou um sistema Linux.
+- Este projeto **não roda nativamente em Windows com MinGW**, pois MinGW não inclui as bibliotecas POSIX. Use **WSL2**, ou um sistema Linux.
 - Nenhuma biblioteca externa precisa ser instalada manualmente (como via vcpkg ou conan).
+
+## Testes
+- Foi utilizado um fake_server feito em python para testar a Fragmentação, conexão e Serialização, para realizar o teste com o 
+fake server, rode python3 fake_server.py num terminal *Separado* do peripheral, e depois use o comando make tests
 
 ## ✅ Como compilar
 ```bash
@@ -39,5 +36,7 @@ make tests    # Compila os testes
 ```bash
 ./bin/slow-peripheral --server 127.0.0.1 --port 7033 --buffer-size 4096 --session-ttl 30000
 ```
+## Resultados finais
+
 
 ---

@@ -12,12 +12,6 @@ while True:
     print(f"Received {len(data)} bytes from {addr}")
     print(f"Dados recebidos: {data.hex()}")
     
-    # --- Parse the incoming CONNECT packet to get its seqnum for acknum ---
-    # Assuming the incoming CONNECT packet also follows the SLOWPacket structure
-    # For a CONNECT packet, seqnum is 0, so acknum in reply will be 0.
-    # The peripheral's seqnum should be used if it was a DATA packet, but for CONNECT it's 0.
-    # Let's extract peripheral's seqnum to make the fake_server more robust
-    # In a real scenario, you'd deserialize the whole packet.
     
     # SLOWPacket header size is 32 bytes
     if len(data) >= 32:
@@ -31,11 +25,7 @@ while True:
     # Simula resposta SLOW com SID = 16 bytes 'A', TTL = 30000, flag ACCEPT
     response = bytearray(32)
     
-    # Use the incoming SID if you want to be more spec-compliant for the SETUP packet
-    # Or generate a new one if the server is truly creating the session ID.
-    # The spec says "sid: UUID da sessão, deve ser usado daqui em diante" for Setup 
-    # So, for the Setup (Accept) packet, the server should generate the SID.
-    # For now, let's keep it simple with 'A' * 16 for testing.
+
     response[0:16] = b'A' * 16  # SID (Server-generated)
 
     # sttl: 30000, flags: ACCEPT (0b01000)

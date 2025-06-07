@@ -1,6 +1,7 @@
 #include "Fragmenter.hpp"
 #include <cstdlib>  
 
+//Utilizado para dividir a mensagem em vários pacotes quando esta escede 1456 bytes
 
 std::vector<SLOWPacket> Fragmenter::fragmentPayload(
     const std::array<uint8_t, 16>& sid,

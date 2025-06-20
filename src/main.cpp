@@ -15,16 +15,13 @@ int main(int argc, char* argv[]) {
     std::string server_ip = "slow.gmelodie.com";
     int port = 7033;
     uint16_t window = 4096;
-    uint32_t sttl = 30000;
 
-    // Cria um Socket UDP
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
         perror("socket");
         return 1;
     }
 
-    //Prepara a struct sockaddr_in com IP e porta do servidor
     sockaddr_in server{};
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
@@ -39,8 +36,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Erro ao resolver host " << server_ip << ": " << gai_strerror(err) << std::endl;
         return 1;
     }
-
-    //Copia o IP resolvido para a struct do servidor e libera a memória da getaddrinfo
     memcpy(&server.sin_addr, &((sockaddr_in*)res->ai_addr)->sin_addr, sizeof(in_addr));
     freeaddrinfo(res);
 
@@ -50,14 +45,11 @@ int main(int argc, char* argv[]) {
     uint32_t confirmed_sttl = 0;
     uint32_t seqnum = 0;
 
-    // Faz o threeWayHandshake, Envia o pacote connect e aguarda resposta
     if (!Connection::threeWayHandshake(sockfd, server, sid, confirmed_sttl, seqnum)) {
         std::cerr << "[ERRO] Handshake falhou ou não houve resposta.\n";
         close(sockfd);
         return 1;
     }
-
-    //Está dando erro no threeWayHandshake, a partir daqui não da pra saber se está funcionando :(
 
     std::cout << "[OK] Handshake aceito pelo servidor!\n"
               << "     SID (UUID): ";

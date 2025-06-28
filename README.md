@@ -31,4 +31,3 @@ make          # Compila o binário principal em bin/slow-peripheral
 ```bash
 ./bin/slow-peripheral --server 127.0.0.1 --port 7033 --buffer-size 4096 --session-ttl 30000
 ```
-## Resultados finais

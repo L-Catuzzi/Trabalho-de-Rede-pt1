@@ -11,13 +11,15 @@
 #include <netdb.h>
 #include <cstring>
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     std::string server_ip = "slow.gmelodie.com";
     int port = 7033;
     uint16_t window = 4096;
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0) {
+    if (sockfd < 0)
+    {
         perror("socket");
         return 1;
     }
@@ -32,11 +34,12 @@ int main(int argc, char* argv[]) {
     hints.ai_socktype = SOCK_DGRAM;
 
     int err = getaddrinfo(server_ip.c_str(), nullptr, &hints, &res);
-    if (err != 0 || res == nullptr) {
+    if (err != 0 || res == nullptr)
+    {
         std::cerr << "Erro ao resolver host " << server_ip << ": " << gai_strerror(err) << std::endl;
         return 1;
     }
-    memcpy(&server.sin_addr, &((sockaddr_in*)res->ai_addr)->sin_addr, sizeof(in_addr));
+    memcpy(&server.sin_addr, &((sockaddr_in *)res->ai_addr)->sin_addr, sizeof(in_addr));
     freeaddrinfo(res);
 
     std::cout << "Iniciando conexão com " << server_ip << ":" << port << "...\n";
@@ -45,7 +48,8 @@ int main(int argc, char* argv[]) {
     uint32_t confirmed_sttl = 0;
     uint32_t seqnum = 0;
 
-    if (!Connection::threeWayHandshake(sockfd, server, sid, confirmed_sttl, seqnum)) {
+    if (!Connection::threeWayHandshake(sockfd, server, sid, confirmed_sttl, seqnum))
+    {
         std::cerr << "[ERRO] Handshake falhou ou não houve resposta.\n";
         close(sockfd);
         return 1;
@@ -53,7 +57,8 @@ int main(int argc, char* argv[]) {
 
     std::cout << "[OK] Handshake aceito pelo servidor!\n"
               << "     SID (UUID): ";
-    for (auto b : sid) std::cout << std::hex << (int)b;
+    for (auto b : sid)
+        std::cout << std::hex << (int)b;
     std::cout << "\n     TTL da sessão: " << std::dec << confirmed_sttl
               << "\n     Próximo seqnum:  " << seqnum << "\n";
 
@@ -63,10 +68,12 @@ int main(int argc, char* argv[]) {
     auto pacotes = Fragmenter::fragmentPayload(sid, confirmed_sttl, seqnum, window, payload);
 
     std::cout << "Enviando payload em " << pacotes.size() << " fragmento(s) ...\n";
-    for (auto& pkt : pacotes) {
+    for (auto &pkt : pacotes)
+    {
         auto buffer = Serializer::serialize(pkt);
-        ssize_t sent = sendto(sockfd, buffer.data(), buffer.size(), 0, (sockaddr*)&server, sizeof(server));
-        if (sent < 0) {
+        ssize_t sent = sendto(sockfd, buffer.data(), buffer.size(), 0, (sockaddr *)&server, sizeof(server));
+        if (sent < 0)
+        {
             perror("sendto");
             close(sockfd);
             return 1;

@@ -7,11 +7,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-class Connection {
+class Connection
+{
 public:
-    static bool threeWayHandshake(int sockfd, sockaddr_in& server,
-                                  std::array<uint8_t, 16>& out_sid,
-                                  uint32_t& out_sttl, uint32_t& seqnum);
+    static bool threeWayHandshake(int sockfd, sockaddr_in &server,
+                                  std::array<uint8_t, 16> &out_sid,
+                                  uint32_t &out_sttl, uint32_t &seqnum);
+
+    static bool disconnect(int sockfd, sockaddr_in &server,
+                           const std::array<uint8_t, 16> &sid,
+                           uint32_t sttl, uint32_t &current_seqnum);
 };
 
 #endif

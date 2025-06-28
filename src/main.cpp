@@ -81,7 +81,16 @@ int main(int argc, char *argv[])
         std::cout << "." << std::flush;
     }
 
-    std::cout << "\nPayload enviado. Programa encerrando.\n";
+    std::cout << "\nPayload enviado. Iniciando desconexão...\n";
+
+    if (!Connection::disconnect(sockfd, server, sid, confirmed_sttl, seqnum))
+    {
+        std::cerr << "⚠️  Desconexão não confirmada (encerrando assim mesmo)\n";
+    }
+
+    std::cout << "Programa encerrando.\n";
+    close(sockfd);
+    return 0;
     close(sockfd);
     return 0;
 }

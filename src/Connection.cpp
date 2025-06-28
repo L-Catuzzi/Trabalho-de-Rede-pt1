@@ -1,38 +1,42 @@
 #include "Connection.hpp"
 #include "UuidGenerator.hpp"
 #include <iostream>
-#include <cstdio>      
+#include <cstdio>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
 
-bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
-                                   std::array<uint8_t, 16>& out_sid,
-                                   uint32_t& out_sttl, uint32_t& seqnum) {
+bool Connection::threeWayHandshake(int sockfd, sockaddr_in &server,
+                                   std::array<uint8_t, 16> &out_sid,
+                                   uint32_t &out_sttl, uint32_t &seqnum)
+{
     // 1) Monta o pacote CONNECT usando Serializer
     SLOWPacket connect;
     connect.sid.fill(0);
-    connect.sttl = 0;             
-    connect.flags = CONNECT;      // 0x04
+    connect.sttl = 0;
+    connect.flags = CONNECT; // 0x04
     connect.seqnum = 0;
     connect.acknum = 0;
     connect.window = 8220;
     connect.fid = 0;
-    connect.fo = 0;           
+    connect.fo = 0;
 
     auto data = Serializer::serialize(connect);
 
     std::cout << "📤 Pacote CONNECT serializado (" << data.size() << " bytes):\n";
-    for (size_t i = 0; i < data.size(); ++i) {
+    for (size_t i = 0; i < data.size(); ++i)
+    {
         printf(" [%02zu]=%02X", i, data[i]);
-        if ((i + 1) % 8 == 0) std::cout << "\n";
+        if ((i + 1) % 8 == 0)
+            std::cout << "\n";
     }
 
     // 2) Envia CONNECT via UDP
     socklen_t len = sizeof(server);
-    ssize_t sent = sendto(sockfd, data.data(), data.size(), 0, (sockaddr*)&server, len);
-    if (sent < 0) {
+    ssize_t sent = sendto(sockfd, data.data(), data.size(), 0, (sockaddr *)&server, len);
+    if (sent < 0)
+    {
         perror("sendto failed");
         return false;
     }
@@ -45,20 +49,23 @@ bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
     std::vector<uint8_t> buffer(1500);
     std::cout << "Esperando resposta de ACCEPT...\n";
     ssize_t recvlen = recvfrom(sockfd, buffer.data(), buffer.size(), 0, nullptr, nullptr);
-    if (recvlen < 0) {
+    if (recvlen < 0)
+    {
         perror("recvfrom failed");
         return false;
     }
 
     // 4) Imprime resposta textual do servidor
     std::cout << "📥 Texto da resposta do servidor: ";
-    for (size_t i = 32; i < (size_t)recvlen; ++i) std::cout << static_cast<char>(buffer[i]);
+    for (size_t i = 32; i < (size_t)recvlen; ++i)
+        std::cout << static_cast<char>(buffer[i]);
     std::cout << "\n";
 
     // 5) Desserializa resposta (SETUP)
     SLOWPacket pkt = Serializer::deserialize(buffer);
 
-    if (!(pkt.flags & ACK)) {
+    if (!(pkt.flags & ACK))
+    {
         std::cerr << "Connection not accepted\n";
         return false;
     }
@@ -78,21 +85,72 @@ bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
     ack.window = 4096;
     ack.fid = 0;
     ack.fo = 0;
-    ack.data.clear();  // ⚠️ IMPORTANTE: sem dados
+    ack.data.clear(); // ⚠️ IMPORTANTE: sem dados
 
     auto ackdata = Serializer::serialize(ack);
-    sendto(sockfd, ackdata.data(), ackdata.size(), 0, (sockaddr*)&server, len);
+    sendto(sockfd, ackdata.data(), ackdata.size(), 0, (sockaddr *)&server, len);
     std::cout << "→ ACK enviado sem dados. Aguardando confirmação...\n";
 
     // 8) Espera o ACK do servidor confirmando
     recvlen = recvfrom(sockfd, buffer.data(), buffer.size(), 0, nullptr, nullptr);
-    if (recvlen < 0) {
+    if (recvlen < 0)
+    {
         perror("recvfrom failed (ACK confirm)");
         return false;
     }
 
     std::cout << "📥 ACK final recebido. Conexão estabelecida com sucesso.\n";
-    seqnum++;  // pronto para enviar dados
+    seqnum++; // pronto para enviar dados
     return true;
 }
+bool Connection::disconnect(int sockfd, sockaddr_in &server,
+                            const std::array<uint8_t, 16> &sid,
+                            uint32_t sttl, uint32_t &current_seqnum)
+{
+    // 1) Monta pacote DISCONNECT com flags corretas (ACK|REVIVE|CONNECT)
+    SLOWPacket disconnect;
+    disconnect.sid = sid;
+    disconnect.sttl = sttl;
+    disconnect.flags = SLOWFlags::ACK | SLOWFlags::REVIVE | SLOWFlags::CONNECT;
+    disconnect.seqnum = current_seqnum++;
+    disconnect.acknum = 0;
+    disconnect.window = 0;
+    disconnect.fid = 0;
+    disconnect.fo = 0;
 
+    auto data = Serializer::serialize(disconnect);
+
+    // 2) Envia DISCONNECT
+    socklen_t len = sizeof(server);
+    ssize_t sent = sendto(sockfd, data.data(), data.size(), 0, (sockaddr *)&server, len);
+    if (sent < 0)
+    {
+        perror("sendto (disconnect)");
+        return false;
+    }
+    std::cout << "📤 DISCONNECT enviado. Aguardando confirmação...\n";
+
+    // 3) Configura timeout de 5s
+    struct timeval tv{5, 0};
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    // 4) Espera ACK de confirmação
+    std::vector<uint8_t> buffer(1500);
+    ssize_t recvlen = recvfrom(sockfd, buffer.data(), buffer.size(), 0, nullptr, nullptr);
+    if (recvlen < 0)
+    {
+        perror("recvfrom (disconnect)");
+        return false;
+    }
+
+    // 5) Desserializa e verifica resposta corretamente (verifica flag ACK)
+    SLOWPacket ack = Serializer::deserialize(buffer);
+    if (!(ack.flags & SLOWFlags::ACK))
+    {
+        std::cerr << "Resposta inválida ao DISCONNECT\n";
+        return false;
+    }
+
+    std::cout << "✅ DISCONNECT confirmado pelo servidor\n";
+    return true;
+}

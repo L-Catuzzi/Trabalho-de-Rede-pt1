@@ -2,13 +2,13 @@ Primeira parte do trabalho final de redes de computadores
 
 ## Integrantes
 Luiz Fellipe Catuzzi - 11871198
-Eduarda
-Rafael Mansur
+Eduarda Tuboy Nardin - 13732495
+Rafael Brazolin Alves Mansur - 14604020
 
 ## Objetivo
 Este projeto implementa o protocolo SLOW (Simple Layered Over UDP Wrapper) usando C++17. A seguir estão as bibliotecas utilizadas no projeto, suas finalidades e onde são aplicadas:
 
-## ✅ Dependências
+## Dependências
 ### Bibliotecas POSIX (requerem Linux/WSL2/macOS/MSYS2)
 
 | Biblioteca         | Para que serve                                      | Onde é usada                  |
@@ -18,25 +18,17 @@ Este projeto implementa o protocolo SLOW (Simple Layered Over UDP Wrapper) usand
 | `<arpa/inet.h>`    | Conversão entre texto/IP binário (`inet_pton`)      | IP string → binário                    |
 | `<unistd.h>`       | Funções POSIX como `close()`                        | Fechamento do socket                   |
 
-## ⚠️ Observações
+## Observações
 - Este projeto **não roda nativamente em Windows com MinGW**, pois MinGW não inclui as bibliotecas POSIX. Use **WSL2**, ou um sistema Linux.
 - Nenhuma biblioteca externa precisa ser instalada manualmente (como via vcpkg ou conan).
 
-## Testes
-- Foi utilizado um fake_server feito em python para testar a Fragmentação, conexão e Serialização, para realizar o teste com o 
-fake server, rode python3 fake_server.py num terminal *Separado* do peripheral, e depois use o comando make tests
-
-## ✅ Como compilar
+## Como compilar
 ```bash
 make          # Compila o binário principal em bin/slow-peripheral
-make tests    # Compila os testes
 ```
 
-## ✅ Como executar
+## Como executar
 ```bash
 ./bin/slow-peripheral --server 127.0.0.1 --port 7033 --buffer-size 4096 --session-ttl 30000
 ```
 ## Resultados finais
-
-
----

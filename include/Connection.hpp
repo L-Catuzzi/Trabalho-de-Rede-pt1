@@ -14,9 +14,9 @@ public:
                                   std::array<uint8_t, 16> &out_sid,
                                   uint32_t &out_sttl, uint32_t &seqnum);
 
-    static bool disconnect(int sockfd, sockaddr_in &server,
+    static void disconnect(int sockfd, const sockaddr_in &server,
                            const std::array<uint8_t, 16> &sid,
-                           uint32_t sttl, uint32_t &current_seqnum);
+                           uint32_t sttl, uint32_t seqnum, uint32_t acknum);
 };
 
 #endif

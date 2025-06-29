@@ -1,26 +1,27 @@
-#include "Connection.hpp"
-#include "UuidGenerator.hpp"
-#include <iostream>
-#include <cstdio>      
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
+#include "Connection.hpp"       // Declaração da classe Connection
+#include "UuidGenerator.hpp"    // Para gerar um UUID aleatório
+#include <iostream>             // Para saída padrão (cout, cerr)
+#include <cstdio>               // Para printf
+#include <sys/socket.h>         // Funções de socket (sendto, recvfrom)
+#include <netinet/in.h>         // Estrutura sockaddr_in
+#include <unistd.h>             // Para close() e funções POSIX
 
+// Realiza handshake com o servidor via protocolo SLOW
 bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
                                    std::array<uint8_t, 16>& out_sid,
                                    uint32_t& out_sttl, uint32_t& seqnum) {
     // 1) Monta o pacote CONNECT
     SLOWPacket connect;
-    connect.sid = UuidGenerator::generate();
-    connect.sttl = 0;
-    connect.flags = CONNECT; 
-    connect.seqnum = 0;
-    connect.acknum = 0;
-    connect.window = 4096;
-    connect.fid = 0;
-    connect.fo = 0;
+    connect.sid = UuidGenerator::generate();    // Gera um SID aleatório para a sessão
+    connect.sttl = 0;                           // TTL inicialmente zero (será definido pelo servidor)
+    connect.flags = CONNECT;                    // Flag CONNECT (solicitação de conexão)
+    connect.seqnum = 0;                         // Número de sequência inicial
+    connect.acknum = 0;                         // Sem ACK neste pacote
+    connect.window = 4096;                      // Janela de recepção do cliente
+    connect.fid = 0;                            // Fragment ID
+    connect.fo = 0;                             // Fragment offset
 
-    // 2) Serializa
+    // 2) Serializa o pacote CONNECT para vetor de bytes
     auto data = Serializer::serialize(connect);
 
     // 3) Mostra o conteúdo hexadecimal do CONNECT     *Usado apenas para testes
@@ -32,12 +33,12 @@ bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
     }
     std::cout << "\n\n";
 
-    // 4) Envia via UDP
+    // 4) Envia pacote CONNECT via UDP
     socklen_t len = sizeof(server);
     ssize_t sent = sendto(sockfd, data.data(), data.size(),
                           0, (sockaddr*)&server, len);
     if (sent < 0) {
-        perror("sendto failed");
+        perror("sendto failed"); // Erro ao enviar
         return false;
     }
     std::cout << "→ CONNECT enviado com " << sent << " bytes\n";
@@ -49,12 +50,12 @@ bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
     // 6) Aguarda resposta (ACCEPT ou REJECT)
-    std::vector<uint8_t> buffer(1500);
+    std::vector<uint8_t> buffer(1500);  // Buffer para resposta
     std::cout << "Esperando resposta de ACCEPT...\n";
     ssize_t recvlen = recvfrom(sockfd, buffer.data(), buffer.size(),
                                0, nullptr, nullptr);
     if (recvlen < 0) {
-        perror("recvfrom failed");
+        perror("recvfrom failed"); // Timeout ou erro de leitura
         return false;
     }
 
@@ -72,13 +73,15 @@ bool Connection::threeWayHandshake(int sockfd, sockaddr_in& server,
 
     // 9) Verifica se vem flag ACCEPT
     if (!(pkt.flags & ACCEPT)) {
-        std::cerr << "Connection not accepted\n";
+        std::cerr << "Connection not accepted\n";   // Falha na negociação
         return false;
     }
 
-    // 10) Preenche as variáveis de saída
-    out_sid    = pkt.sid;
-    out_sttl   = pkt.sttl;
-    seqnum     = pkt.seqnum + 1;
+    // 10) Preenche variáveis de saída com informações da sessão
+    out_sid    = pkt.sid;       // SID fornecido pelo servidor
+    out_sttl   = pkt.sttl;      // TTL de validade da sessão
+    seqnum     = pkt.seqnum + 1;// Próximo número de sequência a ser usado
+    
+    // Conexão estabelecida com sucesso
     return true;
 }
